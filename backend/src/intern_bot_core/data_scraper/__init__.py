@@ -1,0 +1,1 @@
+from intern_bot_core.data_scraper.scraper import BaseScraper

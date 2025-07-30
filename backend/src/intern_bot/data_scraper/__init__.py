@@ -1,0 +1,1 @@
+from intern_bot.data_scraper.data_scraper import DataScraper

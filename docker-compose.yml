@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: internbot-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: internbot
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  backend:
+    build: ./backend
+    container_name: internbot-backend
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: internbot
+    ports:
+      - "8000:8000"
+  # frontend:
+  #   build: ./frontend
+  #   container_name: internbot-frontend
+  #   depends_on:
+  #     - backend
+  #   ports:
+  #     - "3000:3000"
+
+volumes:
+  pgdata:
