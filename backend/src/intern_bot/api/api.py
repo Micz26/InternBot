@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from intern_bot.api.utils.routes import router
-from intern_bot.scheduler import start_scheduler, stop_scheduler
+from intern_bot.api.utils.scheduler import start_scheduler, stop_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
