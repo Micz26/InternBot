@@ -1,6 +1,7 @@
 import logging
 from typing import Type, Literal
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from intern_bot_core.data_scraper import BaseScraper
 from intern_bot.data_scraper.scrapers import NokiaScraper
@@ -43,10 +44,21 @@ class DataScraper:
     def scrape_offers_details(cls, scraper_name: Literal['PWR', 'Nokia', 'Sii'], offers: list[str]
                               ) -> list[dict[str, str]]:
         detailed_offers = []
-        for offer in offers:
-            if detailed_offer := cls.scrape_offer_details(scraper_name, offer):
-                detailed_offers.append(detailed_offer)
-            time.sleep(0.5)
+        
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_offer = {
+                executor.submit(cls.scrape_offer_details, scraper_name, offer): offer 
+                for offer in offers
+            }
+            
+            for future in as_completed(future_to_offer):
+                offer = future_to_offer[future]
+                try:
+                    detailed_offer = future.result()
+                    if detailed_offer:
+                        detailed_offers.append(detailed_offer)
+                except Exception as e:
+                    logging.warning(f"Error processing offer {offer}: {e}")
             
         logging.info(f"Finished scraping {scraper_name}. Total offers with details: {len(detailed_offers)}")
         return detailed_offers

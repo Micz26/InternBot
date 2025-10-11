@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { chatService } from '../services/chatService';
 import { useToast } from '../components/Toast';
+import { useAuth } from '../hooks/useAuth';
+import { PasswordModal } from '../components/PasswordModal';
 import { Send, MapPin, Bot, User, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   id: string;
@@ -13,6 +16,7 @@ interface Message {
 
 const Chat: React.FC = () => {
   const { showError } = useToast();
+  const { isAuthenticated, isLoading, authenticate } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -22,7 +26,7 @@ const Chat: React.FC = () => {
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isChatLoading, setIsChatLoading] = useState(false);
   // Audio mode disabled - not relevant for internship recommendations
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,7 +60,7 @@ const Chat: React.FC = () => {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isChatLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -67,7 +71,7 @@ const Chat: React.FC = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setIsLoading(true);
+    setIsChatLoading(true);
 
     try {
       const response = await chatService.sendMessage(inputMessage.trim(), currentLocation);
@@ -92,7 +96,7 @@ const Chat: React.FC = () => {
 
       setMessages(prev => [...prev, errorMessage]);
     } finally {
-      setIsLoading(false);
+      setIsChatLoading(false);
     }
   };
 
@@ -110,8 +114,25 @@ const Chat: React.FC = () => {
     }
   };
 
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Ładowanie...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <>
+      <PasswordModal 
+        isOpen={!isAuthenticated} 
+        onSuccess={authenticate} 
+      />
+      <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -161,7 +182,33 @@ const Chat: React.FC = () => {
                   : 'bg-white border border-gray-200 text-gray-900'
               )}
             >
-              <p className="text-sm leading-relaxed">{message.text}</p>
+              {message.sender === 'bot' ? (
+                <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      a: ({ href, children }) => (
+                        <a 
+                          href={href} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          {children}
+                        </a>
+                      ),
+                      ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                      li: ({ children }) => <li className="text-sm">{children}</li>,
+                    }}
+                  >
+                    {message.text}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-sm leading-relaxed">{message.text}</p>
+              )}
               <div className={clsx(
                 'text-xs mt-2 opacity-70',
                 message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
@@ -178,7 +225,7 @@ const Chat: React.FC = () => {
           </div>
         ))}
         
-        {isLoading && (
+        {isChatLoading && (
           <div className="flex items-start space-x-3 animate-fade-in">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
               <Bot className="w-4 h-4 text-white" />
@@ -207,21 +254,21 @@ const Chat: React.FC = () => {
               onKeyPress={handleKeyPress}
               placeholder="Zapytaj o staże, praktyki, oferty pracy dla studentów..."
               className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
-              disabled={isLoading}
+              disabled={isChatLoading}
             />
           </div>
           
           <button 
             type="submit" 
-            disabled={!inputMessage.trim() || isLoading}
+            disabled={!inputMessage.trim() || isChatLoading}
             className={clsx(
               'p-3 rounded-2xl transition-all duration-200 flex items-center justify-center',
-              !inputMessage.trim() || isLoading
+              !inputMessage.trim() || isChatLoading
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105'
             )}
           >
-            {isLoading ? (
+            {isChatLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <Send className="w-5 h-5" />
@@ -234,6 +281,7 @@ const Chat: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

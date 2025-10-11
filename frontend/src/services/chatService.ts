@@ -17,14 +17,14 @@ interface ChatRequest {
 //   audio_base64: string;
 // }
 
-interface ChatResponse {
-  output?: string;
-  content?: string;
-  messages?: Array<{
-    content: string;
-    type?: string;
-  }>;
+interface ChatResponseItem {
+  content: string;
+  additional_kwargs?: {
+    refusal?: any;
+  };
 }
+
+type ChatResponse = ChatResponseItem[];
 
 export const chatService = {
   async sendMessage(query: string, location?: Location | null): Promise<string> {
@@ -40,19 +40,13 @@ export const chatService = {
       
       const response = await axios.post<ChatResponse>(`${BACKEND_URL}${API_ENDPOINTS.AGENT_INVOKE}`, requestData);
       
-      // Handle different response formats
-      if (response.data.output) {
-        return response.data.output;
-      }
-      
-      if (response.data.content) {
-        return response.data.content;
-      }
-      
-      if (response.data.messages && response.data.messages.length > 0) {
-        // Find the last message with content
-        const lastMessage = response.data.messages[response.data.messages.length - 1];
-        return lastMessage.content || 'Sorry, I received an empty response.';
+      // Handle array response format from backend
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        // Get the last item's content (the final AI response)
+        const lastItem = response.data[response.data.length - 1];
+        if (lastItem.content) {
+          return lastItem.content;
+        }
       }
       
       return 'Sorry, I received an empty response.';

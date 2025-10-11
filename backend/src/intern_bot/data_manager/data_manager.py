@@ -140,14 +140,20 @@ class DataManager:
             DataManager.remove_offer(link)
 
     @staticmethod
-    def get_current_offers_links() -> list[dict[str, str]]:
+    def get_current_offers_links(source: str | None = None) -> list[dict[str, str]]:
         """Pobiera aktualne oferty z bazy danych (id + source)."""
         try:
             with DataManager._get_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(f"SELECT link FROM {DataManager.settings.OFFERS_TABLE_NAME}")
-                    rows = cur.fetchall()
-                    return rows
+                if source is not None:
+                    with conn.cursor() as cur:
+                        cur.execute(f"SELECT link FROM {DataManager.settings.OFFERS_TABLE_NAME} WHERE source = %s", (source,))
+                        rows = cur.fetchall()
+                        return rows
+                else:
+                    with conn.cursor() as cur:
+                        cur.execute(f"SELECT link FROM {DataManager.settings.OFFERS_TABLE_NAME}")
+                        rows = cur.fetchall()
+                        return rows                    
         except Exception as e:
             print(f"Error fetching current offers: {e}")
             return []

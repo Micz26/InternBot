@@ -1,5 +1,6 @@
 import json
 import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
@@ -15,34 +16,61 @@ from intern_bot.api.utils.models import AgentInput
 router = APIRouter()
 
 
+def process_source(source: str):
+    """Process a single source: scrape offers, update database"""
+    try:
+        current_offers = DataManager.get_current_offers_links(source)
+        
+        new_offers = DataScraper.scrape_offers(source)
+        print(f"SCRAPED {source}:", new_offers)
+        
+        to_add, to_remove = DataManager.diff_offers(current_offers, new_offers)
+        print(f"TO ADD {source}:", to_add)
+        to_add = to_add
+        
+        DataManager.remove_offers(to_remove)
+        
+        detailed_offers = DataScraper.scrape_offers_details(source, to_add)
+        DataManager.add_offers(detailed_offers)
+        print(f"ADDED {source}:", detailed_offers)
+        
+        return {"source": source, "status": "success", "added": len(detailed_offers)}
+    except Exception as e:
+        print(f"Error processing {source}: {e}")
+        return {"source": source, "status": "error", "error": str(e)}
+
+
 @router.post('/scrape/data')
 async def aagent_stream():
     try:
         DataManager.create_vector_index()
 
-        current_offers = DataManager.get_current_offers_links()
-
-        # nokia_offers = DataScraper.scrape_offers('Nokia')
-        # sii_offers = DataScraper.scrape_offers('Sii')
-        pwr_offers = DataScraper.scrape_offers('PWR')
-        print("SCRAPED", pwr_offers)
-
-        # new_offers = nokia_offers + sii_offers + pwr_offers
-        new_offers = pwr_offers
-        to_add, to_remove = DataManager.diff_offers(current_offers, new_offers)
-        print("TO ADD", to_add)
-
-        DataManager.remove_offers(to_remove)
-
-        detailed_offers = DataScraper.scrape_offers_details('PWR', to_add)
-        DataManager.add_offers(detailed_offers)
-        print("ADDED", detailed_offers)
-
+        sources = ['Nokia', 'PWR', 'Sii']
+        results = []
+        
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            # Submit all source processing tasks
+            future_to_source = {
+                executor.submit(process_source, source): source 
+                for source in sources
+            }
+            
+            for future in as_completed(future_to_source):
+                source = future_to_source[future]
+                try:
+                    result = future.result()
+                    results.append(result)
+                except Exception as e:
+                    print(f"Error processing {source}: {e}")
+                    results.append({"source": source, "status": "error", "error": str(e)})
+        
         outdated = DataManager.get_outdated_offers()
         DataManager.remove_offers(outdated)
         
-
-        return JSONResponse(content={"message": "Data scraped successfully"})
+        return JSONResponse(content={
+            "message": "Data scraped successfully", 
+            "results": results
+        })
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
