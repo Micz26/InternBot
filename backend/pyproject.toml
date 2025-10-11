@@ -21,7 +21,8 @@ dependencies = [
     "fastapi==0.112.2",
     "uvicorn",
     "langgraph",
-    "celery[redis]"
+    "celery[redis]",
+    "apscheduler"
 ]
 
 [project.optional-dependencies]

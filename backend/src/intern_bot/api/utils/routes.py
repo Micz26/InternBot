@@ -11,37 +11,15 @@ from intern_bot.data_scraper import DataScraper
 from intern_bot.data_manager import DataManager
 from intern_bot.agent import agent
 from intern_bot.api.utils.models import AgentInput
+from intern_bot.api.utils.scheduler import scheduler
+from intern_bot.api.utils.scheduler import process_source, run_daily_scraping
 
 
 router = APIRouter()
 
 
-def process_source(source: str):
-    """Process a single source: scrape offers, update database"""
-    try:
-        current_offers = DataManager.get_current_offers_links(source)
-        
-        new_offers = DataScraper.scrape_offers(source)
-        print(f"SCRAPED {source}:", new_offers)
-        
-        to_add, to_remove = DataManager.diff_offers(current_offers, new_offers)
-        print(f"TO ADD {source}:", to_add)
-        to_add = to_add
-        
-        DataManager.remove_offers(to_remove)
-        
-        detailed_offers = DataScraper.scrape_offers_details(source, to_add)
-        DataManager.add_offers(detailed_offers)
-        print(f"ADDED {source}:", detailed_offers)
-        
-        return {"source": source, "status": "success", "added": len(detailed_offers)}
-    except Exception as e:
-        print(f"Error processing {source}: {e}")
-        return {"source": source, "status": "error", "error": str(e)}
-
-
 @router.post('/scrape/data')
-async def aagent_stream():
+async def scrape_data():
     try:
         DataManager.create_vector_index()
 
@@ -72,6 +50,37 @@ async def aagent_stream():
             "results": results
         })
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post('/scrape/data/test')
+async def test_scraping():
+    """Test endpoint to manually trigger the scraping job"""
+    try:
+        run_daily_scraping()
+        return JSONResponse(content={"message": "Test scraping completed successfully"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get('/scheduler/status')
+async def get_scheduler_status():
+    """Get the current status of the scheduler"""
+    try:
+        jobs = []
+        for job in scheduler.get_jobs():
+            jobs.append({
+                "id": job.id,
+                "name": job.name,
+                "next_run_time": str(job.next_run_time) if job.next_run_time else None,
+                "trigger": str(job.trigger)
+            })
+        
+        return JSONResponse(content={
+            "scheduler_running": scheduler.running,
+            "jobs": jobs
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
