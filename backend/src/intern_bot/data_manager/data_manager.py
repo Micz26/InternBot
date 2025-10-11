@@ -162,10 +162,11 @@ class DataManager:
         - [nowe oferty] — które są w new_offers, ale nie ma ich w current_offers
         - [usunięte oferty] — które są w current_offers, ale nie ma ich w new_offers
         """
-        to_add = new_offers - current_offers
-        to_remove = current_offers - new_offers
+        to_add = set(new_offers) - set(current_offers)
+        to_remove = set(current_offers) - set(new_offers)
 
-        return to_add, to_remove
+        return list(to_add), list(to_remove)
+
     
     @staticmethod
     def get_outdated_offers() -> list[dict[str, str]]:

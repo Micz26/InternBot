@@ -1,40 +1,203 @@
 # InternBot
 
-https://biurokarier.pwr.edu.pl/
+An AI-powered assistant for recommending internships and job opportunities for students, designed to help users find the perfect internship or job placement.
 
-https://fa-evmr-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs?lastSelectedFacet=TITLES&
+## 🚀 Features
 
-location=Poland&locationId=300000000471967&locationLevel=country&mode=location&selectedTitlesFacet=TRA
+- **AI Chat Interface**: Modern, responsive chat interface with real-time communication
+- **Job Scraping**: Automated scraping of job offers from multiple sources (PWR, Nokia, SII)
+- **Location Services**: GPS integration for location-aware responses
+- **Student-Focused**: Specialized recommendations for student internships
+- **Real-time Updates**: Live data scraping and vector search
+- **Modern UI/UX**: Clean, aesthetic design with smooth animations
 
-https://sii.pl/oferty-pracy/all/it-software-development/
+## 🏗️ Architecture
 
+The project consists of three main components:
 
-DOC:
-content -> opis oferty
-metadata:
-- title git
-- link git
-- firma git
-- location git
-- typ umowy/ tak/nie git
+### Backend (FastAPI + Python)
+- **API Server**: FastAPI-based REST API
+- **AI Agent**: LangChain-powered conversational AI
+- **Data Scraping**: Automated job offer collection from multiple sources
+- **Vector Database**: PostgreSQL with pgvector for semantic search
+- **Data Management**: Efficient storage and retrieval of job offers
 
+### Frontend (React + TypeScript)
+- **Modern UI**: React 18 with TypeScript and Tailwind CSS
+- **Responsive Design**: Mobile-first approach with smooth animations
+- **Real-time Chat**: WebSocket-like experience with streaming responses
+- **Audio Integration**: Text-to-speech and voice input capabilities
+- **Toast Notifications**: User-friendly feedback system
 
-PWR: poziom stanowiska, doświadczenie, preferowany wydział
+### Database (PostgreSQL + pgvector)
+- **Vector Storage**: Semantic search capabilities
+- **Job Offers**: Structured storage of scraped opportunities
+- **Metadata**: Rich information about each job posting
 
-{'id': 'https://biurokarier.pwr.edu.pl/oferty-pracy/asystent-geodety/', 'link': 'https://biurokarier.pwr.edu.pl/oferty-pracy/asystent-geodety/', 'title': '', 'company': 'Techsoft Sp. z o.o.', 'location': 'Poland', 'contract_type': 'Employment contract', 'date_posted': datetime.datetime(2025, 7, 4, 0, 0), 'date_closing': datetime.datetime(2025, 8, 3, 0, 0), 'description': 'Zakres obowiązków\nWykonywanie opracowań kameralnych w ramach geodezyjnej obsługi budowy\nPrace terenowe w ramach geodezyjnej obsługi budowy\nWykonywanie dokumentacji geodezyjnej na każdym etapie budowy\nWykonywanie geodezyjnej dokumentacji powykonawczej\nKoordynacja prac geodezyjnych na placu budowy i współpraca z innymi działami firmy w celu zapewnienia terminowej realizacji projektów,\nOferujemy\nUmowa o pracę lub kontrakt B2B\nNiezbędne narzędzia pracy tj. telefon służbowy, laptop, samochód\nSystem premiowy – uzależniony od wyników\nElastyczne podejście do pracownika\nKartę Multisport\nWymagania\nZnajomość metod i technologii pomiarowych\nWykształcenie wyższe lub średnie o kierunku technicznym (geodezja, budownictwo, inne)\nObsługa komputera, w tym środowiska Office (Excel, Word)\nObsługa programów typu CAD/GIS\nUmiejętność pracy w zespole\nPrawo jazdy kategorii B\nUprawnienia geodezyjne będą dodatkowym atutem\nWięcej informacji\nNumer referencyjny\nIG/05/2025\nPoziom stanowiska\nmłodszy specjalista\nWymiar godzinowy\npełen etat\nPreferowana dyscyplina\narchitektura i urbanistyka, automatyka, elektronika i elektrotechnika, informatyka techniczna i telekomunikacja, inżynieria biomedyczna, inżynieria chemiczna, inżynieria lądowa i transport, inżynieria mechaniczna, inżynieria środowiska, górnictwo i energetyka, nauki o zarządzaniu i jakości\nWymagane doświadczenie\nbrak\nWymagane dokumenty\nCV\nNumer referencyjny: IG/05/2025\nPoziom stanowiska: młodszy specjalista\nWymiar godzinowy: pełen etat\nPreferowana dyscyplina: architektura i urbanistyka, automatyka, elektronika i elektrotechnika, informatyka techniczna i telekomunikacja, inżynieria biomedyczna, inżynieria chemiczna, inżynieria lądowa i transport, inżynieria mechaniczna, inżynieria środowiska, górnictwo i energetyka, nauki o zarządzaniu i jakości\nWymagane doświadczenie: brak\nWymagane dokumenty: CV\n\nTags: asertywność, gotowość do uczenia się, jakość, kompetencje naukowo-techniczne, kompleksowe rozwiązywanie problemów, krytyczne myślenie, organizacja pracy własnej, radzenie sobie ze stresem, umiejętność pracy w zespole, zarządzanie zespołem, zdolność analitycznego i logicznego myślenia', 'source': 'pwr'}
+## 🛠️ Tech Stack
 
-Nokia:
+### Backend
+- **FastAPI**: Modern Python web framework
+- **LangChain**: AI agent framework
+- **PostgreSQL**: Primary database
+- **pgvector**: Vector similarity search
+- **Docker**: Containerization
 
-if working student, st; poland
+### Frontend
+- **React 18**: UI framework
+- **TypeScript**: Type safety
+- **Vite**: Build tooling
+- **Tailwind CSS**: Styling
+- **Axios**: HTTP client
+- **Lucide React**: Icons
 
-{'title': 'Operations Assistant- Working Student (Wroclaw)', 'id': 'https://fa-evmr-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/22192', 'company': 'Nokia', 'location': 'Poland', 'link': 'https://fa-evmr-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/22192', 'description': "Position:\n Operations Assistant - Working Student\nDuration:\n 12 months with the possibility to prolong\xa0\nLocation:\n Poland, Wroclaw\nEducation Recommendations:\n\xa0Active student status for at least one year\n\n\nA global R&D Laboratories organization is seeking a Working Student to join the Laboratory team (Operational sub-squad) in Wroclaw. As the content owner, operator, and designer, the team ensures the operation of industry-leading R&D laboratories. In this role, you will collaborate closely with the local Laboratory team and coordinate with Laboratory teams across 16 sites worldwide.\n\nSchedule: Part time\n\nStudy level: College degree level 1 (2-3 yrs)\n\nQualifications:\nYou have:\nActive status student\nGood English communication skills, both verbal and written\nOpen to hybrid work from Wroclaw office\nPractical knowledge of\xa0\nMicrosoft Office\nExcellent interpersonal skills\nSelf-management and\n\xa0good organizational skills\xa0\nAbility to multitask and work in a fast-paced environment\nProfessionalism, responsibility and commitment to work\nProblem-solving skills\nExperience working in a similar position will be an additional asset\n\nResponsibilities:\nAs part of our team, you will:\nPrepare materials and presentations for meetings and events\nSupport onboarding for new employees\nCoordinate hardware ordering, allocation, and exchange\nOrder office supplies\nPrepare letters, reports, and other documents based on provided information and requirements\nEnsure information and documents flow within the company\nProvide administrative support and information to the teams\nCoordinate and maintain the SharePoint community and other communication forums\nOther ad hoc tasks depending on the current company's needs\n\nIn \nMobile\xa0\nNetworks\n, our ambition is to become the\xa0\ntrusted partner of choice for Communications Service Providers (CSPs), as well as for non-CSP entities in sectors like utilities, transportation, public services, and defense. We strive to deliver unbeatable customer experiences in wireless connectivity.\n\nRole Type: Individual contributor", 'contract_type': 'Contract of mandate', 'date_posted': datetime.datetime(2025, 6, 20, 5, 28, 10, tzinfo=datetime.timezone.utc), 'date_closing': None}
+## 🚀 Quick Start
 
-SII: work mode, miasto
+### Prerequisites
+- Docker and Docker Compose
+- Node.js 18+ (for local development)
+- Python 3.9+ (for local development)
 
-{'id': '34193', 'link': 'https://sii.pl/oferty-pracy/id/34193/inżynier-jakości-ds.-rozwoju-produktu-dfmea-branża-automotive', 'title': 'Inżynier jakości ds. rozwoju produktu DFMEA – branża automotive', 'company': 'Sii Polska', 'location': 'Poland', 'contract_type': None, 'date_posted': None, 'date_closing': None, 'description': 'W Sii poszukujemy Inżyniera Jakości, który dołączy do zespołu i będzie realizował projekty dla klienta z branży motoryzacyjnej. Praca odbywa się w trybie stacjonarnym w siedzibie klienta w Krakowie. Osoba na tym stanowisku będzie odpowiedzialna za prowadzenie analiz DFMEA oraz współpracę z zespołami projektowymi, produkcyjnymi i jakościowymi w celu zapewnienia wysokiej niezawodności i odporności projektowanych produktów. To rola dla osób z doświadczeniem technicznym, które chcą mieć realny wpływ na jakość i rozwój nowoczesnych rozwiązań inżynierskich.\nTwoje zadania:\n- Prowadzenie analiz DFMEA dla nowych produktów\n- Zapewnienie wysokiej jakości i poprawności analiz DFMEA\n- Moderowanie spotkań DFMEA i angażowanie uczestników procesu\n- Współpraca z zespołami inżynierii produktu, produkcji i jakości\n- Analizowanie danych technicznych w celu definiowania priorytetów dla ulepszeń projektowych\n- Przygotowywanie i prowadzenie prezentacji wyników prac\nWymagania:\n- Gotowość do pracy stacjonarnej w siedzibie klienta w Krakowie\n- Minimum 5 lat doświadczenia w roli technicznej (np. jako inżynier jakości lub inżynier produktu)\n- Praktyczna znajomość metodyki DFMEA oraz narzędzi FMEA\n- Wiedza na temat projektowania komponentów mechanicznych lub elektronicznych\n- Umiejętność współpracy w interdyscyplinarnych zespołach i skuteczna komunikacja\n- Biegła znajomość języka angielskiego i dobra organizacja pracy pod presją kilku projektów jednocześnie\n- Wymagane przebywanie na terenie Polski\nNr oferty 250704-AILNV', 'source': 'Sii'}
+### Development Setup
 
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd InternBot
+   ```
 
-PGVector:
-https://dev.to/yukaty/setting-up-postgresql-with-pgvector-using-docker-hcl
+2. **Start with Docker Compose:**
+   ```bash
+   # Production setup
+   docker-compose up --build
+   
+   # Development setup with hot reload
+   docker-compose -f docker-compose.dev.yml up --build
+   ```
 
-https://medium.com/@adarsh.ajay/setting-up-postgresql-with-pgvector-in-docker-a-step-by-step-guide-d4203f6456bd
+3. **Access the application:**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - Database: localhost:5432
+
+### Local Development
+
+#### Backend
+```bash
+cd backend
+pip install -e .
+uvicorn intern_bot.api.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 📁 Project Structure
+
+```
+InternBot/
+├── backend/                 # FastAPI backend
+│   ├── src/intern_bot/
+│   │   ├── agent/          # AI agent implementation
+│   │   ├── api/            # API routes and models
+│   │   ├── data_scraper/   # Web scraping modules
+│   │   ├── data_manager/   # Database operations
+│   │   └── settings/       # Configuration
+│   ├── Dockerfile
+│   └── pyproject.toml
+├── frontend/                # React frontend
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── views/          # Page components
+│   │   ├── services/       # API services
+│   │   └── lib/            # Utilities
+│   ├── Dockerfile
+│   └── package.json
+├── postgres/               # Database schema
+├── docker-compose.yml      # Production setup
+├── docker-compose.dev.yml  # Development setup
+└── README.md
+```
+
+## 🌐 Deployment
+
+### Platform Options
+
+#### 1. Vercel (Frontend) + Railway/Render (Backend)
+- **Frontend**: Deploy to Vercel with automatic builds
+- **Backend**: Deploy to Railway or Render
+- **Database**: Use managed PostgreSQL with pgvector
+
+#### 2. Netlify (Frontend) + DigitalOcean (Backend)
+- **Frontend**: Deploy to Netlify
+- **Backend**: Deploy to DigitalOcean App Platform
+- **Database**: Managed PostgreSQL droplet
+
+#### 3. Full Docker Deployment
+- **VPS**: Deploy entire stack on a VPS
+- **Cloud**: Use cloud providers (AWS, GCP, Azure)
+- **Orchestration**: Docker Swarm or Kubernetes
+
+### Environment Variables
+
+#### Backend
+```env
+DB_HOST=your-db-host
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=your-password
+DB_NAME=internbot
+```
+
+#### Frontend
+```env
+VITE_BACKEND_URL=https://your-backend-url.com
+VITE_NODE_ENV=production
+```
+
+## 🔧 Configuration
+
+### Data Sources
+The system scrapes job offers from:
+- **PWR (Politechnika Wrocławska)**: Academic job board
+- **Nokia**: Corporate career portal
+- **SII**: IT consulting company
+
+### API Endpoints
+- `POST /agent/invoke` - Chat with AI agent
+- `POST /agent/stream` - Stream chat responses
+- `POST /scrape/data` - Trigger data scraping
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the documentation in each component's README
+- Review the API documentation at `/docs` when running the backend
+
+## 🔮 Future Enhancements
+
+- [ ] Real-time notifications
+- [ ] Advanced filtering and search
+- [ ] User authentication and profiles
+- [ ] Mobile app (React Native)
+- [ ] Multi-language support
+- [ ] Advanced analytics dashboard
+- [ ] Integration with more job boards
+- [ ] Machine learning for job matching

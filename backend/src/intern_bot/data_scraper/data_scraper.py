@@ -23,7 +23,7 @@ class DataScraper:
     @classmethod
     def scrape_offers(
         cls, scraper_name: Literal['PWR', 'Nokia', 'Sii']
-    ) -> list[dict[str, str]]:
+    ) -> list[str]:
         scraper = cls._get_scraper(scraper_name)
         return scraper.scrape_offers()
     

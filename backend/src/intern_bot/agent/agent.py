@@ -20,12 +20,19 @@ llm = ChatOpenAI(
 )
 
 @tool
-async def retrieve_offers(offer_description: str, title: str | None, company: str | None, location: str | None):
+async def retrieve_offers(internship_info: str):
+    # , title: str | None, company: str | None, location: str | None
     """
-    This tool is optimezed for searching through internships offers for students. It gets offer desxcription that can be used for semantic search with indexed offers descriptions.
+    Search internship offers using semantic similarity over indexed descriptions.
+
+    Parameters:
+    - offer_description: Free‑text description that serves as the semantic query.
+
+    Returns:
+    - Ranked results from the data store matching the query and applied filters.
     """
-    print('DESC', offer_description)
-    results = DataManager.similarity_search_cosine(offer_description, filters={'title': title, 'company': company, 'location': location})
+    print('DESC', internship_info)
+    results = DataManager.similarity_search_cosine(internship_info)
     print(results)
     return results
 

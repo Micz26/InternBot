@@ -20,16 +20,17 @@ from intern_bot.data_manager import DataManager
 # print("sii")
 # print(sii.keys())
 
-# links = DataScraper.scrape_offers('Sii')
-# offers = DataScraper.scrape_offers_details('Sii', links[:3])
 
 # for o in offers:
 #     print(50*'=')
 #     o
 
-# def add_offers():
-#     for o in offers[:20]:
-#         DataManager.add_offer(o)
+
+def add_offers():
+    links = DataScraper.scrape_offers('Sii')
+    offers = DataScraper.scrape_offers_details('Sii', links[:3])
+    for o in offers[:20]:
+        DataManager.add_offer(o)
 
 
 
@@ -61,11 +62,11 @@ if __name__ == "__main__":
     # DataManager.create_vector_index()
     # show_all_offers()
     # add_offers()
-    # show_all_offers()
+    show_all_offers()
 
-    results = DataManager.similarity_search_cosine(
-        "Poszukujemy Analityka Biznesowo-Systemowego, który dołączy do projektu w sektorze bankowym",
-        k=3,
-    )
-    for r in results:
-        print(r)
+    # results = DataManager.similarity_search_cosine(
+    #     "Poszukujemy Analityka Biznesowo-Systemowego, który dołączy do projektu w sektorze bankowym",
+    #     k=3,
+    # )
+    # for r in results:
+    #     print(r)

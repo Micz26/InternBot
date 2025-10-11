@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: internbot-db
+    container_name: internbot-db-dev
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -11,12 +11,12 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_dev:/var/lib/postgresql/data
       - ./postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
   backend:
     build: ./backend
-    container_name: internbot-backend
+    container_name: internbot-backend-dev
     depends_on:
       - db
     environment:
@@ -25,19 +25,26 @@ services:
       DB_USER: postgres
       DB_PASSWORD: password
       DB_NAME: internbot
-      # You need to set this with your actual OpenAI API key
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-proj-your-openai-api-key-here}
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: uvicorn intern_bot.api.api:app --host 0.0.0.0 --port 8000 --reload
+
   frontend:
-    build: ./frontend
-    container_name: internbot-frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: internbot-frontend-dev
     depends_on:
       - backend
     ports:
-      - "3000:80"
+      - "3000:3000"
     environment:
       - VITE_BACKEND_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
-  pgdata:
+  pgdata_dev:
