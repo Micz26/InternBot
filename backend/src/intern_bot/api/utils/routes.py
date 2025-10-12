@@ -1,65 +1,56 @@
 import json
 import asyncio
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, datetime
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 
-from intern_bot.data_scraper import DataScraper
 from intern_bot.data_manager import DataManager
 from intern_bot.agent import agent
 from intern_bot.api.utils.models import AgentInput
 from intern_bot.api.utils.scheduler import scheduler
-from intern_bot.api.utils.scheduler import process_source, run_daily_scraping
+from intern_bot.api.utils.scheduler import run_daily_scraping
 
+
+def serialize(obj):
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    if isinstance(obj, bytes):
+        return obj.decode("utf-8", errors="ignore")
+    return obj
 
 router = APIRouter()
 
-
 @router.post('/scrape/data')
 async def scrape_data():
-    try:
-        DataManager.create_vector_index()
-
-        sources = ['Nokia', 'PWR', 'Sii']
-        results = []
-        
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            # Submit all source processing tasks
-            future_to_source = {
-                executor.submit(process_source, source): source 
-                for source in sources
-            }
-            
-            for future in as_completed(future_to_source):
-                source = future_to_source[future]
-                try:
-                    result = future.result()
-                    results.append(result)
-                except Exception as e:
-                    print(f"Error processing {source}: {e}")
-                    results.append({"source": source, "status": "error", "error": str(e)})
-        
-        outdated = DataManager.get_outdated_offers()
-        DataManager.remove_offers(outdated)
-        
-        return JSONResponse(content={
-            "message": "Data scraped successfully", 
-            "results": results
-        })
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post('/scrape/data/test')
-async def test_scraping():
     """Test endpoint to manually trigger the scraping job"""
     try:
         run_daily_scraping()
         return JSONResponse(content={"message": "Test scraping completed successfully"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get('/data/info')
+async def data_info():
+    """Get the current status of the data"""
+    try:
+        data_info = DataManager.get_data_info()
+        return JSONResponse(content={"message": data_info})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get('/data/current_offers')
+async def current_offers():
+    """Get the current offers"""
+    try:
+        current_offers = DataManager.get_current_offers()
+        serialized = [
+            {k: serialize(v) for k, v in offer.items()}
+            for offer in current_offers
+        ]
+        return JSONResponse(content={"message": serialized})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -3,10 +3,7 @@ from typing import Type, Literal
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from intern_bot_core.data_scraper import BaseScraper
-from intern_bot.data_scraper.scrapers import NokiaScraper
-from intern_bot.data_scraper.scrapers import PWRScraper
-from intern_bot.data_scraper.scrapers import SiiScraper
+from intern_bot.data_scraper.scrapers import BaseScraper,PWRScraper, NokiaScraper, SiiScraper
 
 # Setup logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

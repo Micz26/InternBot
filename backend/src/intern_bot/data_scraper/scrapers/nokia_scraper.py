@@ -3,7 +3,7 @@ from datetime import datetime
 import re
 from bs4 import BeautifulSoup
 
-from intern_bot_core.data_scraper import BaseScraper
+from intern_bot.data_scraper.scrapers.base_scraper import BaseScraper
 
 
 class NokiaScraper(BaseScraper):
@@ -21,39 +21,38 @@ class NokiaScraper(BaseScraper):
     )
     
     @staticmethod
-    def scrape_offers(pages: int = 2) -> list[str]:
+    def scrape_offers() -> list[str]:
         """Fetch basic info: job ID and link."""
-        limit = 10
+        limit = 200
         offset = 0
         results = []
 
-        for _ in range(pages):
-            finder_value = (
-                f"findReqs;siteNumber=CX_1,"
-                f"facetsList=LOCATIONS;WORK_LOCATIONS;WORKPLACE_TYPES;TITLES;CATEGORIES;ORGANIZATIONS;POSTING_DATES;FLEX_FIELDS,"
-                f"limit={limit},offset={offset},lastSelectedFacet=TITLES,"
-                f"locationId=300000000471967,selectedTitlesFacet=TRA,sortBy=POSTING_DATES_DESC"
-            )
+        finder_value = (
+            f"findReqs;siteNumber=CX_1,"
+            f"facetsList=LOCATIONS;WORK_LOCATIONS;WORKPLACE_TYPES;TITLES;CATEGORIES;ORGANIZATIONS;POSTING_DATES;FLEX_FIELDS,"
+            f"limit={limit},offset={offset},lastSelectedFacet=TITLES,"
+            f"locationId=300000000471967,selectedTitlesFacet=TRA,sortBy=POSTING_DATES_DESC"
+        )
 
-            params = {
-                "onlyData": "true",
-                "expand": "requisitionList.workLocation,requisitionList.otherWorkLocations,requisitionList.secondaryLocations,flexFieldsFacet.values,requisitionList.requisitionFlexFields",
-                "finder": finder_value
-            }
+        params = {
+            "onlyData": "true",
+            "expand": "requisitionList.workLocation,requisitionList.otherWorkLocations,requisitionList.secondaryLocations,flexFieldsFacet.values,requisitionList.requisitionFlexFields",
+            "finder": finder_value
+        }
 
-            resp = requests.get(NokiaScraper.BASE_URL, headers=NokiaScraper.HEADERS, params=params)
-            resp.raise_for_status()
-            data = resp.json()
-            items = data.get("items", [])
-            if not items or not items[0].get("requisitionList"):
-                break
+        resp = requests.get(NokiaScraper.BASE_URL, headers=NokiaScraper.HEADERS, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+        items = data.get("items", [])
+        if not items or not items[0].get("requisitionList"):
+            return results
 
 
-            for job in items[0]["requisitionList"]:
-                title = job['Title'].lower()
-                if (('working student' in title or 'summer trainee' in title) and job['PrimaryLocation'] == 'Poland'):
-                    job_id = str(job["Id"])
-                    results.append(NokiaScraper.JOB_DETAIL_BASE_URL.format(id=job_id))
+        for job in items[0]["requisitionList"]:
+            title = job['Title'].lower()
+            if (('working student' in title or 'summer trainee' in title) and job['PrimaryLocation'] == 'Poland'):
+                job_id = str(job["Id"])
+                results.append(NokiaScraper.JOB_DETAIL_BASE_URL.format(id=job_id))
 
             offset += limit
 

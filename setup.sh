@@ -30,11 +30,22 @@ else
     echo "✅ backend/.env file already exists"
 fi
 
+# Load server configuration from config.env if it exists
+if [ -f "config.env" ]; then
+    echo "📋 Loading server configuration from config.env..."
+    source config.env
+    echo "✅ Loaded configuration: SERVER_IP=${SERVER_IP:-localhost}"
+else
+    echo "⚠️  config.env not found, using default server IP: localhost"
+    SERVER_IP="localhost"
+    VITE_BACKEND_URL="http://localhost:8000"
+fi
+
 # Check if frontend .env.local exists
 if [ ! -f "frontend/.env.local" ]; then
     echo "📝 Creating frontend/.env.local file..."
     cat > frontend/.env.local << EOF
-VITE_BACKEND_URL=http://localhost:8000
+VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8000}
 VITE_NODE_ENV=development
 EOF
     echo "✅ Created frontend/.env.local file"
@@ -46,6 +57,6 @@ echo ""
 echo "🔧 Setup complete! Next steps:"
 echo "1. Edit backend/.env and add your OpenAI API key"
 echo "2. Run: docker-compose up --build"
-echo "3. Open http://localhost:3000 in your browser"
+echo "3. Open http://${SERVER_IP:-localhost}:3000 in your browser"
 echo ""
 echo "📚 For more help, see SETUP.md"

@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     DB_PASSWORD: SecretStr
 
     OFFERS_TABLE_NAME: str = 'offers'
+    
+    # Server configuration
+    SERVER_IP: str
+    FRONTEND_PORT: str
 
     class Config:
         env_file = ".env"

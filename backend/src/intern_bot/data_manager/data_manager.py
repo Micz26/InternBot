@@ -140,7 +140,7 @@ class DataManager:
             DataManager.remove_offer(link)
 
     @staticmethod
-    def get_current_offers_links(source: str | None = None) -> list[dict[str, str]]:
+    def get_current_offers_links(source: str | None = None) -> list[str]:
         """Pobiera aktualne oferty z bazy danych (id + source)."""
         try:
             with DataManager._get_connection() as conn:
@@ -148,12 +148,11 @@ class DataManager:
                     with conn.cursor() as cur:
                         cur.execute(f"SELECT link FROM {DataManager.settings.OFFERS_TABLE_NAME} WHERE source = %s", (source,))
                         rows = cur.fetchall()
-                        return rows
                 else:
                     with conn.cursor() as cur:
                         cur.execute(f"SELECT link FROM {DataManager.settings.OFFERS_TABLE_NAME}")
                         rows = cur.fetchall()
-                        return rows                    
+                return [row[0] for row in rows]
         except Exception as e:
             print(f"Error fetching current offers: {e}")
             return []
@@ -162,7 +161,7 @@ class DataManager:
     def diff_offers(
         current_offers: list[str],
         new_offers: list[str]
-    ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    ) -> tuple[list[str], list[str]]:
         """
         Zwraca tuple:
         - [nowe oferty] — które są w new_offers, ale nie ma ich w current_offers
@@ -190,6 +189,18 @@ class DataManager:
         except Exception as e:
             print(f"Error fetching outdated offers: {e}")
             return []
+
+    def get_data_info() -> dict[str, Any]:
+        """Get the current status of the data"""
+        try:
+            with DataManager._get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"SELECT COUNT(*) FROM {DataManager.settings.OFFERS_TABLE_NAME}")
+                    rows = cur.fetchone()
+                    return f'{rows[0]} offers in vector database'
+        except Exception as e:
+            print(f"Error fetching data info: {e}")
+            return {"message": "Error fetching data info"}
         
     @staticmethod
     def similarity_search_cosine(

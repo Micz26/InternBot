@@ -3,7 +3,7 @@ import time
 from bs4 import BeautifulSoup
 
 from intern_bot.data_scraper.utils.pwr_data_processing import parse_polish_date, LocationEnum, ContractTypeEnum
-from intern_bot_core.data_scraper import BaseScraper
+from intern_bot.data_scraper.scrapers.base_scraper import BaseScraper
 
 
 class PWRScraper(BaseScraper):
@@ -15,14 +15,16 @@ class PWRScraper(BaseScraper):
     }
 
     @staticmethod
-    def scrape_offers(pages: int = 1) -> list[str]:
+    def scrape_offers() -> list[str]:
         """Scrape list of links and ids from job listing pages."""
         results = []
-        for page in range(1, pages + 1):
-            url = f"{PWRScraper.BASE_URL}/page/{page}/" if page > 1 else PWRScraper.BASE_URL
+        for page in range(1, 15):
+            url = f"{PWRScraper.BASE_URL}/page/{page}/"
             try:
                 resp = requests.get(url, headers=PWRScraper.HEADERS)
+
                 resp.raise_for_status()
+
                 soup = BeautifulSoup(resp.text, "html.parser")
                 articles = soup.find_all("article", class_="noo_job")
 

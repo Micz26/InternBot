@@ -13,6 +13,8 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - internbot-network
 
   backend:
     build: ./backend
@@ -27,6 +29,9 @@ services:
       DB_NAME: internbot
     ports:
       - "8000:8000"
+    networks:
+      - internbot-network
+
   frontend:
     build: ./frontend
     container_name: internbot-frontend
@@ -35,7 +40,13 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_BACKEND_URL=http://localhost:8000
+    - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8000}
+    networks:
+      - internbot-network
 
 volumes:
   pgdata:
+
+networks:
+  internbot-network:
+    driver: bridge

@@ -4,10 +4,11 @@ import re
 import json
 
 from bs4 import BeautifulSoup
+from intern_bot.data_scraper.scrapers.base_scraper import BaseScraper
 
 
-class SiiScraper:
-    BASE_URL = "https://web-job-api.sii.pl/offers/pl/all/all/all/all/all/all/all/all/score/desc/{offset}/{limit}/pl"
+class SiiScraper(BaseScraper):
+    BASE_URL = "https://web-job-api.sii.pl/offers/pl/all/JUNIOR_1,INTERN_3/all/all/all/all/all/all/score/desc/{offset}/{limit}/pl"
     JOB_DETAIL_BASE_URL = "https://sii.pl/oferty-pracy/id/{id}/{title}"
 
     BASE_HEADERS = {
@@ -25,40 +26,36 @@ class SiiScraper:
     @staticmethod
     def scrape_offers() -> list[str]:
         """Scrape job offers from SII API and return minimal info: id and link."""
-        limit = 10
+        limit = 50
         offset = 0
         collected = []
 
         headers = {**SiiScraper.BASE_HEADERS, **SiiScraper.SII_EXTRA_HEADERS}
 
-        for x in range(1):
-            url = SiiScraper.BASE_URL.format(offset=offset, limit=limit)
-            response = requests.get(url, headers=headers)
+        url = SiiScraper.BASE_URL.format(offset=offset, limit=limit)
+        response = requests.get(url, headers=headers)
 
-            if response.status_code == 403:
-                raise Exception("Access denied (403 Forbidden).")
+        if response.status_code == 403:
+            raise Exception("Access denied (403 Forbidden).")
 
-            response.raise_for_status()
-            data = response.json()
+        response.raise_for_status()
+        data = response.json()
 
-            offers = data.get("offers", [])
-            total = data.get("total", 0)
+        offers = data.get("offers", [])
 
-            if not offers:
-                raise Exception("No more offers returned by the API.")
+        if not offers:
+            raise Exception("No more offers returned by the SII API.")
 
-            for offer in offers:
-                offer_id = str(offer.get("offerId"))
-                title = str(offer.get("title")).lower()
-                title = re.sub(r'[\s\-–—−]+', '-', title)
-                offer_link = SiiScraper.JOB_DETAIL_BASE_URL.format(id=offer_id, title=title)
-                collected.append(offer_link)
+        for offer in offers:
+            offer_id = str(offer.get("offerId"))
+            title = str(offer.get("title")).lower()
+            title = re.sub(r'[\s\-–—−]+', '-', title)
+            offer_link = SiiScraper.JOB_DETAIL_BASE_URL.format(id=offer_id, title=title)
+            collected.append(offer_link)
 
-            offset += limit
-            time.sleep(0.3)
+        offset += limit
+        time.sleep(0.3)
 
-            if offset >= total:
-                break
 
         return collected
 

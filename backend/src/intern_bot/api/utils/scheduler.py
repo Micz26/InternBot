@@ -20,7 +20,7 @@ def process_source(source: str):
 
         to_add, to_remove = DataManager.diff_offers(current_offers, new_offers)
         print(f"TO ADD {source}:", to_add)
-        to_add = to_add[:10]
+        to_add = to_add[:30] if source == 'PWR' else to_add[:10]
 
         DataManager.remove_offers(to_remove)
 
