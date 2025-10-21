@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 import { BACKEND_URL, API_ENDPOINTS } from '../lib/consts';
 
 interface Location {
@@ -8,7 +9,11 @@ interface Location {
 
 interface ChatRequest {
   query: string;
-  config?: Record<string, any>;
+  config?: {
+    configurable?: {
+      thread_id?: string;
+    };
+  };
   location?: Location;
 }
 
@@ -26,12 +31,31 @@ interface ChatResponseItem {
 
 type ChatResponse = ChatResponseItem[];
 
+// Generate a persistent thread_id for the session
+const getThreadId = (): string => {
+  const storageKey = 'internbot_thread_id';
+  let threadId = sessionStorage.getItem(storageKey);
+  
+  if (!threadId) {
+    threadId = uuidv4();
+    sessionStorage.setItem(storageKey, threadId);
+  }
+  
+  return threadId;
+};
+
 export const chatService = {
   async sendMessage(query: string, location?: Location | null): Promise<string> {
     try {
+      const threadId = getThreadId();
+      
       const requestData: ChatRequest = { 
         query: query,
-        config: {}
+        config: {
+          configurable: {
+            thread_id: threadId
+          }
+        }
       };
       
       if (location) {

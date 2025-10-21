@@ -5,36 +5,52 @@ from langchain_core.tools import tool
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import ToolMessage, HumanMessage, SystemMessage
+from langsmith import traceable
+
+from langgraph.checkpoint.memory import InMemorySaver
 
 from intern_bot.data_manager import DataManager
 from intern_bot.settings import Settings
 
 settings = Settings()
 
-
 llm = ChatOpenAI(
     api_key=settings.OPENAI_API_KEY.get_secret_value(),
-    model="gpt-4o-mini",
+    model="gpt-4.1-nano",
     temperature=0,
+    max_tokens=15000,
 )
 
 @tool
-async def retrieve_offers(internship_info: str):
-    # , title: str | None, company: str | None, location: str | None
+@traceable
+async def retrieve_offers(internship_info: str, company: str | None):
     """
-    Search internship offers using semantic similarity over indexed descriptions.
+    Retrieve internship and apprenticeship offers based on semantic similarity.
+
+    This tool searches a vector database containing internship and apprenticeship
+    offers. It should always be used whenever a recommendation of relevant offers
+    is requested.
 
     Parameters:
-    - offer_description: Free‑text description that serves as the semantic query.
+    - internship_info: Free-text input describing an internship or apprenticeship,
+      similar in style to a job posting (e.g., required skills, role, responsibilities).
+      The tool will use this description to find semantically matching offers
+      from the indexed dataset.
+    - company: Optional. The name of the company for which to retrieve offers.
+      Only provide this parameter if the user explicitly requests offers from a
+      specific company (eg. Sii, Nokia); otherwise, leave it as None.
 
     Returns:
-    - Ranked results from the data store matching the query and applied filters.
+    - Ranked list of internship or apprenticeship offers from the vector database
+      that are most semantically similar to the input description, optionally
+      filtered by company.
     """
-    print('DESC', internship_info)
-    results = DataManager.similarity_search_cosine(internship_info)
-    print(results)
+    print('Querying with description:', internship_info, 'Company filter:', company)
+    results = DataManager.similarity_search_cosine(internship_info, filters={'company': company})
+    print('Found results:', results)
     return results
+
 
 tools = [retrieve_offers]
 
@@ -42,13 +58,36 @@ tools_map = {tool.name: tool for tool in tools}
 
 llm_w_tools = llm.bind_tools(tools)
 
-class GraphState(BaseModel):
+class GraphInputState(BaseModel):
+    query: str
+
+class GraphState(GraphInputState):
     messages: Annotated[list, add_messages]
 
 async def chatbot(state: GraphState, config):
     MAX_ITERATIONS = 3
 
     messages = state.messages
+    query = state.query
+
+    if len(messages) == 0:
+        messages.append(SystemMessage(content="""
+You are a helpful assistant whose goal is to find the best internship or apprenticeship offers for the user. 
+Always use the `retrieve_offers` tool when asked to find offers. 
+
+When recommending an offer, always include:
+- Link to the offer
+- Company name
+- Short description of the offer
+
+If available, you may also include additional details:
+- Location
+- Contract type
+- Date posted
+- Closing date
+"""))
+    messages.append(HumanMessage(query))
+
 
     for i in range(1, MAX_ITERATIONS+1):
         if i == MAX_ITERATIONS:
@@ -80,7 +119,7 @@ async def chatbot(state: GraphState, config):
 
 
 graph_builder = StateGraph(
-    GraphState, input=GraphState, output=GraphState
+    GraphState, input=GraphInputState, output=GraphState
 )
 
 
@@ -89,19 +128,28 @@ graph_builder.add_node("chatbot", chatbot)
 graph_builder.add_edge("__start__", "chatbot")
 graph_builder.add_edge("chatbot", "__end__")
 
-agent = graph_builder.compile()
+checkpointer = InMemorySaver()
+agent = graph_builder.compile(checkpointer=checkpointer)
 
 
 if __name__ == "__main__":
     import asyncio
-    from langchain_core.messages import HumanMessage
     async def main():
+        config = {"configurable": {"thread_id": "123"}}
         initial_state = {
-            "messages": [HumanMessage(content="Find me internships related to software engineering in Poland")]
+            "messages": [HumanMessage(content="Find me internships related to software engineering in Nokia")]
         }
-        config = {}
 
         # Invoke the graph once and get the final state
+        result = await agent.ainvoke(initial_state, config=config)
+        messages = result.get("messages", [])
+        if messages:
+            print(f"Assistant: {messages[-1].content}")
+
+        initial_state = {
+            "messages": [HumanMessage(content="Now me internships related to software engineering in Sii")]
+        }
+
         result = await agent.ainvoke(initial_state, config=config)
         messages = result.get("messages", [])
         if messages:

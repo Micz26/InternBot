@@ -239,6 +239,9 @@ class DataManager:
                 # Proste filtry równościowe
                 for key in ["company", "location", "contract_type", "source"]:
                     if key in filters and filters[key] is not None:
+                        # Sii ofers have Sii Polska as company name
+                        if key == "company" and "sii" in filters[key].lower():
+                            filters[key] = "Sii Polska"
                         where_clauses.append(f"{key} = %s")
                         params.append(filters[key])
 

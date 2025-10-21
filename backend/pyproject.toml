@@ -15,6 +15,7 @@ dependencies = [
     "selenium",
     "langchain==0.3.9",
     "langchain-openai==0.2.10",  
+    "langsmith",
     "pydantic",
     "pydantic-settings",
     "psycopg2-binary",

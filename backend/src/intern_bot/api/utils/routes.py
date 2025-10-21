@@ -79,16 +79,15 @@ async def get_scheduler_status():
 @router.post('/agent/invoke')
 async def aagent_invoke(payload: AgentInput):
     query = payload.query
-    config = payload.config
+    config = payload.config.dict()
 
-    first_message = HumanMessage(query)
-
-    result = await agent.ainvoke({"messages": [first_message]}, config=config)
+    result = await agent.ainvoke({"query": query}, config=config)
     messages = result.get("messages", [])
     if messages:
         return messages
     else:
         raise Exception('NO MESSAGES')
+
     
 @router.post('/agent/stream')
 async def aagent_stream(payload: AgentInput):
