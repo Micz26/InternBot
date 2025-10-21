@@ -25,7 +25,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: klakoklako1
+      DB_PASSWORD: 
       DB_NAME: internbot
     ports:
       - "8000:8000"
