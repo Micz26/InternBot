@@ -6,7 +6,6 @@ from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import ToolMessage, HumanMessage, SystemMessage
-from langsmith import traceable
 
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -17,14 +16,13 @@ settings = Settings()
 
 llm = ChatOpenAI(
     api_key=settings.OPENAI_API_KEY.get_secret_value(),
-    model="gpt-4.1-nano",
+    model="gpt-4.1-mini",
     temperature=0,
     max_tokens=15000,
 )
 
 @tool
-@traceable
-async def retrieve_offers(internship_info: str, company: str | None):
+async def retrieve_offers(internship_info: str, company: str | None, limit: int = 5, offset: int = 0):
     """
     Retrieve internship and apprenticeship offers based on semantic similarity.
 
@@ -39,18 +37,51 @@ async def retrieve_offers(internship_info: str, company: str | None):
       from the indexed dataset.
     - company: Optional. The name of the company for which to retrieve offers.
       Only provide this parameter if the user explicitly requests offers from a
-      specific company (eg. Sii, Nokia); otherwise, leave it as None.
+      specific company (e.g., Sii, Nokia); otherwise, leave it as None.
+    - limit: Optional. The maximum number of offers to return (default = 5).  
+      Use this parameter **only if the user explicitly specifies** how many offers 
+      they want to see (e.g., "show me 10 offers").  
+      Otherwise, do not include it in the call — the default value of 5 will be used automatically.
+    - offset: Optional. Used to skip a given number of top-ranked results (default = 0).  
+      Use this parameter **when the user asks for other or new offers** after already 
+      receiving some (e.g., “show me different ones” or “what else do you have?”).  
+      In such cases, pass an offset equal to the number of previously shown offers 
+      (e.g., offset = 5 if the previous call returned 5 offers).
 
     Returns:
     - Ranked list of internship or apprenticeship offers from the vector database
       that are most semantically similar to the input description, optionally
-      filtered by company.
+      filtered by company.  
+      The returned offer links can later be used with the `get_offer_details` tool
+      to retrieve detailed information about each offer.
     """
-    print('Querying with description:', internship_info, 'Company filter:', company)
-    results = DataManager.similarity_search_cosine(internship_info, filters={'company': company})
+    print('Querying with description:', internship_info, 'Company filter:', company, 'Limit:', limit, 'Offset:', offset)
+    results = DataManager.similarity_search_cosine(query=internship_info, k=limit, offset=offset, filters={'company': company})
     print('Found results:', results)
     return results
 
+@tool
+async def get_offer_details(offer_link: str):
+    """
+    Retrieve all available information about a specific offer based on its link.
+
+    This tool provides comprehensive details about a given internship or apprenticeship 
+    offer using its unique offer link. It should be used whenever detailed information 
+    about a specific offer (previously retrieved or recommended) is requested.
+
+    This function works exclusively with offer links that were previously obtained 
+    from the `retrieve_offers` tool. Using any other external or arbitrary links 
+    will not return valid results.
+
+    Parameters:
+    - offer_link: The unique URL or identifier of the offer to retrieve details for.
+
+    Returns:
+    - All available metadata and structured information about the specified offer, 
+      including description, requirements, location, company, and other relevant fields.
+    """
+    offer = DataManager.get_offer(offer_link)
+    return offer
 
 tools = [retrieve_offers]
 
@@ -72,20 +103,32 @@ async def chatbot(state: GraphState, config):
 
     if len(messages) == 0:
         messages.append(SystemMessage(content="""
-You are a helpful assistant whose goal is to find the best internship or apprenticeship offers for the user. 
-Always use the `retrieve_offers` tool when asked to find offers. 
+You are a helpful assistant whose goal is to find the best internship or apprenticeship offers for the user.
 
 When recommending an offer, always include:
-- Link to the offer
+- Link to the offer in markdown format: [Offer title] (offer_link)  
+  (If no title is available, use the company name instead.)
 - Company name
-- Short description of the offer
+- Short description of the offer (max 2-3 sentences)
 
 If available, you may also include additional details:
 - Location
 - Contract type
 - Date posted
 - Closing date
-"""))
+
+When showing offer details, always include full information about the offer as returned by the tool.
+
+Instructions:
+- Always use the `retrieve_offers` tool when asked to find or recommend internship or apprenticeship offers.
+- Always use the `get_offer_details` tool when asked to get details about an offer that was previously recommended.
+- In all other cases, respond based on your knowledge without using any tools.
+- When asked about salary, pay, or compensation (for any position, company, or offer), or when the user asks for the highest-paying or best-paid offers (either in general or in a specific company):
+  * Do NOT use any tools.
+  * Always respond that salary information is not available and that you do not have access to salary data.
+  * Suggest instead that you can help find internship or apprenticeship offers that best match the user's skills, interests, or goals.
+""")
+)
     messages.append(HumanMessage(query))
 
 

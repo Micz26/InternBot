@@ -58,22 +58,22 @@ class DataManager:
             return []
         
     @staticmethod
-    def get_offer(id: str) -> dict[str, str] | None:
+    def get_offer(link: str) -> dict[str, str] | None:
         try:
             with DataManager._get_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(f"""
                         SELECT id, source, link, title, company, location, contract_type, date_posted, date_closing, description
                         FROM {DataManager.settings.OFFERS_TABLE_NAME}
-                        WHERE id = %s
-                    """, (id))
+                        WHERE link = %s
+                    """, (link))
                     row = cur.fetchone()
                     if row:
                         columns = [desc[0] for desc in cur.description]
                         return dict(zip(columns, row))
                     return None
         except Exception as e:
-            print(f"Error fetching offer {id} : {e}")
+            print(f"Error fetching offer {link} : {e}")
             return None
 
     @staticmethod
@@ -206,15 +206,17 @@ class DataManager:
     def similarity_search_cosine(
         query: str,
         k: int = 5,
+        offset: int = 0,
         filters: dict[str, Any] | None = None
     ) -> list[dict]:
         """
         Perform similarity search using cosine similarity on the embedding column,
-        with optional metadata filters.
+        with optional metadata filters and pagination support.
 
         Args:
             query: tekst zapytania do osadzenia i wyszukania.
             k: liczba zwracanych wyników.
+            offset: liczba wyników do pominięcia (dla paginacji).
             filters: słownik filtrów na metadane, np.
                 {
                     "company": "Acme Corp",
@@ -269,9 +271,9 @@ class DataManager:
                 FROM {DataManager.settings.OFFERS_TABLE_NAME}
                 {where_sql}
                 ORDER BY distance
-                LIMIT %s
+                LIMIT %s OFFSET %s
             """
-            params.append(k)
+            params.extend([k, offset])
 
             with DataManager._get_connection() as conn:
                 with conn.cursor() as cur:
