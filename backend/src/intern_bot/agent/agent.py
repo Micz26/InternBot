@@ -22,7 +22,10 @@ llm = ChatOpenAI(
 )
 
 @tool
-async def retrieve_offers(internship_info: str, company: str | None, limit: int = 5, offset: int = 0):
+async def retrieve_offers(internship_info: str, 
+                          include_companies: list[str] | None = None,
+                          exclude_companies: list[str] | None = None,
+                          limit: int = 5, offset: int = 0):
     """
     Retrieve internship and apprenticeship offers based on semantic similarity.
 
@@ -35,13 +38,26 @@ async def retrieve_offers(internship_info: str, company: str | None, limit: int 
       similar in style to a job posting (e.g., required skills, role, responsibilities).
       The tool will use this description to find semantically matching offers
       from the indexed dataset.
-    - company: Optional. The name of the company for which to retrieve offers.
-      Only provide this parameter if the user explicitly requests offers from a
-      specific company (e.g., Sii, Nokia); otherwise, leave it as None.
+
+    - include_companies: Optional. A list of company names to explicitly include 
+      in the search results.  
+      Use this parameter **only when the user explicitly requests offers from one 
+      or more specific companies** (e.g., “show me offers from Sii and Nokia”).  
+      Each listed company name will be used as a filter to include only offers 
+      from those companies.
+
+    - exclude_companies: Optional. A list of company names to explicitly exclude 
+      from the search results.  
+      Use this parameter **only when the user asks to exclude offers from certain 
+      companies** (e.g., “show me offers not from Sii” or “show me offers from 
+      other companies than Nokia”).  
+      Offers from any company in this list will be filtered out.
+
     - limit: Optional. The maximum number of offers to return (default = 5).  
       Use this parameter **only if the user explicitly specifies** how many offers 
-      they want to see (e.g., "show me 10 offers").  
+      they want to see (e.g., “show me 10 offers”).  
       Otherwise, do not include it in the call — the default value of 5 will be used automatically.
+
     - offset: Optional. Used to skip a given number of top-ranked results (default = 0).  
       Use this parameter **when the user asks for other or new offers** after already 
       receiving some (e.g., “show me different ones” or “what else do you have?”).  
@@ -51,12 +67,22 @@ async def retrieve_offers(internship_info: str, company: str | None, limit: int 
     Returns:
     - Ranked list of internship or apprenticeship offers from the vector database
       that are most semantically similar to the input description, optionally
-      filtered by company.  
+      filtered by company inclusion or exclusion.  
       The returned offer links can later be used with the `get_offer_details` tool
       to retrieve detailed information about each offer.
     """
-    print('Querying with description:', internship_info, 'Company filter:', company, 'Limit:', limit, 'Offset:', offset)
-    results = DataManager.similarity_search_cosine(query=internship_info, k=limit, offset=offset, filters={'company': company})
+    print('Querying with description:', internship_info, 'Include companies:', include_companies, 'Exclude companies:', exclude_companies, 'Limit:', limit, 'Offset:', offset)
+
+    if include_companies:
+        include_filters = {'company': include_companies}
+    else:
+        include_filters = None
+    if exclude_companies:
+        exclude_filters = {'company': exclude_companies}
+    else:
+        exclude_filters = None
+
+    results = DataManager.similarity_search_cosine(query=internship_info, k=limit, offset=offset, include_filters=include_filters, exclude_filters=exclude_filters)
     print('Found results:', results)
     return results
 
@@ -68,6 +94,10 @@ async def get_offer_details(offer_link: str):
     This tool provides comprehensive details about a given internship or apprenticeship 
     offer using its unique offer link. It should be used whenever detailed information 
     about a specific offer (previously retrieved or recommended) is requested.
+
+    If certain information the user asks about is not included in the returned data, 
+    it means that such information is not available in the database, and the user 
+    should be informed accordingly.
 
     This function works exclusively with offer links that were previously obtained 
     from the `retrieve_offers` tool. Using any other external or arbitrary links 
@@ -123,10 +153,14 @@ Instructions:
 - Always use the `retrieve_offers` tool when asked to find or recommend internship or apprenticeship offers.
 - Always use the `get_offer_details` tool when asked to get details about an offer that was previously recommended.
 - In all other cases, respond based on your knowledge without using any tools.
-- When asked about salary, pay, or compensation (for any position, company, or offer), or when the user asks for the highest-paying or best-paid offers (either in general or in a specific company):
+- When the user asks for the highest-paying or best-paid offers (either in general or in a specific company):
   * Do NOT use any tools.
   * Always respond that salary information is not available and that you do not have access to salary data.
   * Suggest instead that you can help find internship or apprenticeship offers that best match the user's skills, interests, or goals.
+- When the user asks about salary, pay, or compensation for a specific offer that has already been retrieved:
+  * You may use the `get_offer_details` tool to check whether salary information is available.
+  * If the salary information is not present in the returned data, inform the user that this information is not available and that you do not have access to it.
+  * Then respond to the user accordingly.
 """)
 )
     messages.append(HumanMessage(query))

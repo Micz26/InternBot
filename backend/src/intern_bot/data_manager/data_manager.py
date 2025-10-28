@@ -207,7 +207,8 @@ class DataManager:
         query: str,
         k: int = 5,
         offset: int = 0,
-        filters: dict[str, Any] | None = None
+        include_filters: dict[str, list] | None = None,
+        exclude_filters: dict[str, list] | None = None
     ) -> list[dict]:
         """
         Perform similarity search using cosine similarity on the embedding column,
@@ -217,14 +218,17 @@ class DataManager:
             query: tekst zapytania do osadzenia i wyszukania.
             k: liczba zwracanych wyników.
             offset: liczba wyników do pominięcia (dla paginacji).
-            filters: słownik filtrów na metadane, np.
+            include_filters: słownik filtrów zawierających wartości do uwzględnienia, np.
                 {
-                    "company": "Acme Corp",
-                    "location": "Kraków",
-                    "contract_type": "full-time",
-                    "date_posted_from": "2023-01-01",
-                    "date_posted_to": "2023-12-31",
-                    "source": "jobboard"
+                    "company": ["Sii Polska", "Nokia"],
+                    "location": ["Kraków", "Warszawa"],
+                    "contract_type": ["full-time", "part-time"],
+                    "source": ["jobboard"]
+                }
+            exclude_filters: słownik filtrów zawierających wartości do wykluczenia, np.
+                {
+                    "location": ["Wrocław", "Gdańsk"],
+                    "company": ["Old Corp"]
                 }
 
         Returns:
@@ -232,34 +236,31 @@ class DataManager:
         """
         try:
             query_embedding = DataManager.embeddings.embed_query(query)
-
-            # Budujemy dynamicznie warunki WHERE
             where_clauses = []
-            params = [query_embedding]  # pierwszy parametr to embedding
+            params = [query_embedding]
 
-            if filters:
-                # Proste filtry równościowe
+            if include_filters:
                 for key in ["company", "location", "contract_type", "source"]:
-                    if key in filters and filters[key] is not None:
+                    if key in include_filters and include_filters[key] and len(include_filters[key]) > 0:
+                        values = include_filters[key]
                         # Sii ofers have Sii Polska as company name
-                        if key == "company" and "sii" in filters[key].lower():
-                            filters[key] = "Sii Polska"
-                        where_clauses.append(f"{key} = %s")
-                        params.append(filters[key])
-
-                # Filtry zakresowe dla dat
-                if "date_posted_from" in filters and filters["date_posted_from"] is not None:
-                    where_clauses.append("date_posted >= %s")
-                    params.append(filters["date_posted_from"])
-                if "date_posted_to" in filters and filters["date_posted_to"] is not None:
-                    where_clauses.append("date_posted <= %s")
-                    params.append(filters["date_posted_to"])
-                if "date_closing_from" in filters and filters["date_closing_from"] is not None:
-                    where_clauses.append("date_closing >= %s")
-                    params.append(filters["date_closing_from"])
-                if "date_closing_to" in filters and filters["date_closing_to"] is not None:
-                    where_clauses.append("date_closing <= %s")
-                    params.append(filters["date_closing_to"])
+                        if key == "company":
+                            values = ["Sii Polska" if "sii" in val.lower() else val for val in values]
+                        
+                        placeholders = ",".join(["%s"] * len(values))
+                        where_clauses.append(f"{key} IN ({placeholders})")
+                        params.extend(values)
+            if exclude_filters:
+                for key in ["company", "location", "contract_type", "source"]:
+                    if key in exclude_filters and exclude_filters[key] and len(exclude_filters[key]) > 0:
+                        values = exclude_filters[key]
+                        # Sii ofers have Sii Polska as company name
+                        if key == "company":
+                            values = ["Sii Polska" if "sii" in val.lower() else val for val in values]
+                        
+                        placeholders = ",".join(["%s"] * len(values))
+                        where_clauses.append(f"{key} NOT IN ({placeholders})")
+                        params.extend(values)
 
             where_sql = ""
             if where_clauses:
