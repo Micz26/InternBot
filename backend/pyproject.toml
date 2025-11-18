@@ -23,7 +23,8 @@ dependencies = [
     "uvicorn",
     "langgraph",
     "celery[redis]",
-    "apscheduler"
+    "apscheduler",
+    "ragas"
 ]
 
 [project.optional-dependencies]
